@@ -1,5 +1,6 @@
 package com.vaadin.training.clientside.refresher.client;
 
+import com.google.gwt.user.client.Timer;
 import com.vaadin.client.ServerConnector;
 import com.vaadin.client.communication.RpcProxy;
 import com.vaadin.client.communication.StateChangeEvent;
@@ -11,8 +12,17 @@ import com.vaadin.training.clientside.refresher.Refresher;
 public class RefresherConnector extends AbstractExtensionConnector {
 
     RefresherServerRpc rpc = RpcProxy.create(RefresherServerRpc.class, this);
+    private final Poller poller;
+
+    private class Poller extends Timer {
+        @Override
+        public void run() {
+            rpc.refresh();
+        }
+    }
 
     public RefresherConnector() {
+        poller = new Poller();
     }
 
     @Override
@@ -23,7 +33,12 @@ public class RefresherConnector extends AbstractExtensionConnector {
     @Override
     public void onStateChanged(StateChangeEvent stateChangeEvent) {
         super.onStateChanged(stateChangeEvent);
-        // TODO: enable or disable polling based on the state
+        poller.cancel();
+        if (getState().enabled) {
+            if (getState().interval > 0) {
+                poller.scheduleRepeating(getState().interval);
+            }
+        }
     }
 
     @Override
@@ -33,7 +48,7 @@ public class RefresherConnector extends AbstractExtensionConnector {
 
     @Override
     public void onUnregister() {
-        // TODO: cancel the timer
+        poller.cancel();
         super.onUnregister();
     }
 

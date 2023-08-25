@@ -1,15 +1,27 @@
 package com.vaadin.training.clientside.refresher;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.vaadin.server.AbstractExtension;
 import com.vaadin.training.clientside.refresher.client.RefresherServerRpc;
 import com.vaadin.training.clientside.refresher.client.RefresherState;
 
+@SuppressWarnings("serial")
 public class Refresher extends AbstractExtension {
 
     private static final int DEFAULT_POLL_INTERVAL_MS = 1000;
 
+    private List<PollListener> listeners = new ArrayList<PollListener>();
+
     private final RefresherServerRpc rpc = new RefresherServerRpc() {
 
+        @Override
+        public void refresh() {
+            for (PollListener listener : listeners) {
+                listener.poll();
+            }
+        }
     };
 
     public Refresher() {
@@ -18,16 +30,11 @@ public class Refresher extends AbstractExtension {
     }
 
     public void setInterval(int interval) {
-        // TODO: Set the interval to shared state
+        getState().interval = interval;
     }
 
     public int getInterval() {
-        // TODO: Get the interval from shared state
-        return 0;
-    }
-
-    public void setEnabled(boolean enabled) {
-        // TODO: Implement this
+        return getState().interval;
     }
 
     @Override
@@ -35,12 +42,16 @@ public class Refresher extends AbstractExtension {
         return (RefresherState) super.getState();
     }
 
+    public void setEnabled(boolean enabled) {
+        getState().enabled = enabled;
+    }
+
     public void addPollListener(PollListener listener) {
-        // TODO: Implement this
+        listeners.add(listener);
     }
 
     public void removePollListener(PollListener listener) {
-        // TODO: Implement this
+        listeners.remove(listener);
     }
 
     public static interface PollListener {
